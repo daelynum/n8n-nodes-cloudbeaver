@@ -95,7 +95,6 @@ export class CloudBeaverClient {
 
 			if (task && !task.running) return;
 
-			await new Promise<void>((resolve) => { globalThis.setTimeout(resolve, intervalMs); });
 			intervalMs = Math.min(intervalMs * 2, maxIntervalMs);
 		}
 

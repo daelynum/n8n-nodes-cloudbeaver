@@ -8,7 +8,6 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 
 import { router } from './actions/router';
 import * as database from './actions/database/Database.resource';
-import { credentialTest } from './methods';
 
 export class CloudBeaver implements INodeType {
 	description: INodeTypeDescription = {
@@ -26,13 +25,10 @@ export class CloudBeaver implements INodeType {
 			{
 				name: 'cloudBeaverApi',
 				required: true,
-				testedBy: 'cloudBeaverApiTest',
 			},
 		],
 		properties: [...database.description],
 	};
-
-	methods = { credentialTest };
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		return await router.call(this);
