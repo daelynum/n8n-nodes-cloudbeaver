@@ -1,1 +1,0 @@
-{"version":3,"file":"TokenAuthProvider.js","sourceRoot":"","sources":["../../../../../nodes/CloudBeaver/transport/auth/TokenAuthProvider.ts"],"names":[],"mappings":";;;AAEA,MAAa,iBAAiB;IAC7B,YAA6B,KAAa;QAAb,UAAK,GAAL,KAAK,CAAQ;IAAG,CAAC;IAE9C,UAAU;QACT,OAAO;YACN,QAAQ,EAAE,OAAO;YACjB,WAAW,EAAE,EAAE,KAAK,EAAE,IAAI,CAAC,KAAK,EAAE;SAClC,CAAC;IACH,CAAC;CACD;AATD,8CASC"}
