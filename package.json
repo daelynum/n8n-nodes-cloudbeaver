@@ -1,6 +1,6 @@
 {
     "name": "n8n-nodes-cloudbeaver",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "description": "n8n node for CloudBeaver — execute SQL queries via CloudBeaver API",
     "license": "MIT",
     "homepage": "",
