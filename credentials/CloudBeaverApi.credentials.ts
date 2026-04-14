@@ -1,10 +1,20 @@
-import type { ICredentialType, INodeProperties } from 'n8n-workflow';
+import type { ICredentialTestRequest, ICredentialType, INodeProperties } from 'n8n-workflow';
 
 export class CloudBeaverApi implements ICredentialType {
 	name = 'cloudBeaverApi';
 	displayName = 'CloudBeaver API';
 	icon = { light: 'file:icons/CloudBeaver.svg', dark: 'file:icons/CloudBeaver.svg' } as const;
 	documentationUrl = 'https://dbeaver.com/docs/cloudbeaver/';
+	test: ICredentialTestRequest = {
+		request: {
+			baseURL: '={{$credentials.serverUrl}}',
+			url: '/api/gql',
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: '{"query":"{ __typename }"}',
+			ignoreHttpStatusErrors: true,
+		},
+	};
 	properties: INodeProperties[] = [
 		{
 			displayName: 'Server URL',
