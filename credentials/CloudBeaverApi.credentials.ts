@@ -35,7 +35,7 @@ export class CloudBeaverApi implements ICredentialType {
 					description: 'Available in CloudBeaver PRO',
 				},
 				{
-					name: 'Local access (Username/Password)',
+					name: 'Local Access (Username/Password)',
 					value: 'local',
 					description: 'Available in all CloudBeaver editions, including Community',
 				},
