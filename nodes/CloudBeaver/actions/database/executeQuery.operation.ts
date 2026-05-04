@@ -43,6 +43,9 @@ export async function execute(
 			});
 		}
 
+		const defaultDatabase =
+			((this.getNodeParameter('defaultDatabase', i, '') as string).trim()) || undefined;
+
 		const options = this.getNodeParameter('options', i, {}) as {
 			queryTimeout?: number;
 			replaceEmptyStrings?: boolean;
@@ -59,6 +62,7 @@ export async function execute(
 				orderBy,
 				where,
 				timeoutMs,
+				defaultDatabase,
 			});
 			const rows = transformResults({ results: raw }, { replaceEmptyStrings });
 			returnData.push(...rows.map((row) => ({ ...row, pairedItem: { item: i } })));

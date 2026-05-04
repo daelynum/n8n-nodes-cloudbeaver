@@ -22,6 +22,14 @@ export const description: INodeProperties[] = [
 		placeholder: 'e.g. postgres-jdbc-19d5ca3a223-2f46e1a321049b15',
 	},
 	{
+		displayName: 'Default Database',
+		name: 'defaultDatabase',
+		type: 'string',
+		default: '',
+		placeholder: 'e.g. demo',
+		description: 'Database or catalog to use when executing SQL. Leave empty to use the connection default.',
+	},
+	{
 		displayName: 'SQL Query',
 		name: 'query',
 		type: 'string',

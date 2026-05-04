@@ -40,10 +40,15 @@ export class CloudBeaverClient {
 		unwrap(response, (msg) => new QueryError(msg), 'Failed to initialize connection');
 	}
 
-	async createContext(connectionId: string, projectId: string): Promise<string> {
+	async createContext(params: {
+		connectionId: string;
+		projectId: string;
+		defaultDatabase?: string;
+	}): Promise<string> {
+		const { connectionId, projectId, defaultDatabase } = params;
 		const response = await this.request<{ sqlContextCreate?: IdResponse }>({
 			...SQL_CONTEXT_CREATE,
-			variables: { connectionId, projectId },
+			variables: { connectionId, projectId, defaultCatalog: defaultDatabase || undefined },
 		});
 		const data = unwrap(response, (msg) => new ContextError(msg), 'Failed to create SQL context');
 		const contextId = data.sqlContextCreate?.id;

@@ -13,8 +13,8 @@ query authLogin($provider: ID!, $credentials: Object) {
 export const SQL_CONTEXT_CREATE: GqlQuery = {
 	operationName: 'sqlContextCreate',
 	query: `
-mutation sqlContextCreate($connectionId: ID!, $projectId: ID) {
-  sqlContextCreate(connectionId: $connectionId, projectId: $projectId) {
+mutation sqlContextCreate($connectionId: ID!, $projectId: ID, $defaultCatalog: String) {
+  sqlContextCreate(connectionId: $connectionId, projectId: $projectId, defaultCatalog: $defaultCatalog) {
     id
   }
 }`,

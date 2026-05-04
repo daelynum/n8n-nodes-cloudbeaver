@@ -14,8 +14,9 @@ export class ExecuteSqlUseCase {
 		orderBy?: string;
 		where?: string;
 		timeoutMs: number;
+		defaultDatabase?: string;
 	}): Promise<SQLQueryResults[]> {
-		const { connectionId, query, limit, offset, orderBy, where, timeoutMs } = input;
+		const { connectionId, query, limit, offset, orderBy, where, timeoutMs, defaultDatabase } = input;
 
 		let sql = query.trim().replace(/;$/, '');
 		if (where)
@@ -26,7 +27,11 @@ export class ExecuteSqlUseCase {
 
 		await this.client.initConnection(connectionId, PROJECT_ID);
 
-		const contextId = await this.client.createContext(connectionId, PROJECT_ID);
+		const contextId = await this.client.createContext({
+			connectionId,
+			projectId: PROJECT_ID,
+			defaultDatabase,
+		});
 
 		try {
 			const taskId = await this.client.executeQuery({
