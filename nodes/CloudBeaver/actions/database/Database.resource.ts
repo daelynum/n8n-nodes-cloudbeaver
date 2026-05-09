@@ -1,8 +1,12 @@
 import type { INodeProperties } from 'n8n-workflow';
 
+import * as deleteTable from './deleteTable.operation';
 import * as executeQuery from './executeQuery.operation';
+import * as insert from './insert.operation';
+import * as select from './select.operation';
+import * as update from './update.operation';
 
-export { executeQuery };
+export { deleteTable, executeQuery, insert, select, update };
 
 export const description: INodeProperties[] = [
 	{
@@ -27,73 +31,88 @@ export const description: INodeProperties[] = [
 		type: 'string',
 		default: '',
 		placeholder: 'e.g. demo',
-		description: 'Database or catalog to use when executing SQL. Leave empty to use the connection default.',
+		description:
+			'Database or catalog to use when executing SQL. Leave empty to use the connection default.',
 	},
 	{
-		displayName: 'SQL Query',
-		name: 'query',
-		type: 'string',
-		typeOptions: { editor: 'sqlEditor' },
-		default: '',
-		required: true,
-		description: 'SQL query to execute',
-	},
-	{
-		displayName: 'Limit',
-		name: 'limit',
-		type: 'number',
-		typeOptions: { minValue: 1 },
-		default: 50,
-		placeholder: 'e.g. 50',
-		description: 'Max number of results to return',
-	},
-	{
-		displayName: 'Offset',
-		name: 'offset',
-		type: 'number',
-		typeOptions: { minValue: 0 },
-		default: 0,
-		placeholder: 'e.g. 50',
-		description: 'Number of results to skip before returning rows',
-	},
-	{
-		displayName: 'Order By',
-		name: 'orderBy',
-		type: 'string',
-		default: '',
-		placeholder: 'e.g. name ASC, created_at DESC',
-		description: 'Column(s) to sort results by, applied on top of the SQL query',
-	},
-	{
-		displayName: 'Where',
-		name: 'where',
-		type: 'string',
-		default: '',
-		placeholder: "e.g. age > 18 AND status = 'active'",
-		description: 'Additional WHERE condition applied on top of the SQL query',
-	},
-	{
-		displayName: 'Options',
-		name: 'options',
-		type: 'collection',
-		placeholder: 'Add option',
-		default: {},
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		// eslint-disable-next-line n8n-nodes-base/node-param-options-type-unsorted-items
 		options: [
 			{
-				displayName: 'Query Timeout',
-				name: 'queryTimeout',
-				type: 'number',
-				default: 60,
-				typeOptions: { minValue: 1 },
-				description: 'Max number of seconds to wait for query results',
+				name: 'Execute SQL Query',
+				value: 'executeQuery',
+				description: 'Execute a raw SQL query',
+				action: 'Execute a SQL query',
 			},
 			{
-				displayName: 'Replace Empty Strings with NULL',
-				name: 'replaceEmptyStrings',
-				type: 'boolean',
-				default: false,
-				description: 'Whether to replace empty strings with NULL in the query results',
+				name: 'Select Rows',
+				value: 'select',
+				description: 'Retrieve rows from a table',
+				action: 'Select rows from a table',
+			},
+			{
+				name: 'Insert Rows',
+				value: 'insert',
+				description: 'Insert new rows into a table',
+				action: 'Insert rows in a table',
+			},
+			{
+				name: 'Update Rows',
+				value: 'update',
+				description: 'Update existing rows in a table',
+				action: 'Update rows in a table',
+			},
+			{
+				name: 'Delete',
+				value: 'deleteTable',
+				description: 'Delete rows, truncate, or drop a table',
+				action: 'Delete table or rows',
 			},
 		],
+		default: 'executeQuery',
 	},
+	{
+		displayName: 'Database Type',
+		name: 'dbType',
+		type: 'options',
+		options: [
+			{
+				name: 'PostgreSQL',
+				value: 'postgresql',
+				description: 'PostgreSQL, SQLite, Oracle, Redshift, Greenplum and other ANSI SQL databases',
+			},
+			{ name: 'MySQL', value: 'mysql', description: 'MySQL, MariaDB, TiDB' },
+			{ name: 'SQL Server', value: 'mssql', description: 'SQL Server, Azure SQL, Sybase' },
+		],
+		default: 'postgresql',
+		description: 'Type of database. Affects identifier quoting style.',
+		displayOptions: { show: { operation: ['select', 'insert', 'update', 'deleteTable'] } },
+	},
+	{
+		displayName: 'Schema',
+		name: 'schema',
+		type: 'string',
+		default: '',
+		placeholder: 'e.g. public',
+		description: 'Database schema containing the table. Leave empty to omit schema prefix.',
+		displayOptions: { show: { operation: ['select', 'insert', 'update', 'deleteTable'] } },
+	},
+	{
+		displayName: 'Table',
+		name: 'table',
+		type: 'string',
+		default: '',
+		required: true,
+		placeholder: 'e.g. users',
+		description: 'Name of the table',
+		displayOptions: { show: { operation: ['select', 'insert', 'update', 'deleteTable'] } },
+	},
+	...executeQuery.description,
+	...select.description,
+	...insert.description,
+	...update.description,
+	...deleteTable.description,
 ];

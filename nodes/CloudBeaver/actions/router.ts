@@ -5,6 +5,16 @@ import { withSession, cloudbeaverRequest } from '../transport';
 import type { GqlResponse, RequestFn } from '../helpers/interfaces';
 import * as database from './database/Database.resource';
 
+type ExecuteOperation = (
+	this: IExecuteFunctions,
+	request: RequestFn,
+	inputItems: INodeExecutionData[],
+) => Promise<INodeExecutionData[]>;
+
+type OperationModule = {
+	execute?: ExecuteOperation;
+};
+
 export async function router(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 	const inputItems = this.getInputData();
 	const returnData: INodeExecutionData[] = [];
@@ -36,7 +46,14 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 			return response as GqlResponse<T>;
 		};
 
-		const results = await database.executeQuery.execute.call(this, request, inputItems);
+		const operation = this.getNodeParameter('operation', 0) as string;
+		const operationModule = database[operation as keyof typeof database] as OperationModule;
+
+		if (!operationModule || typeof operationModule.execute !== 'function') {
+			throw new Error(`Unknown operation: ${operation}`);
+		}
+
+		const results = await operationModule.execute.call(this, request, inputItems);
 		returnData.push(...results);
 	});
 

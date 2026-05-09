@@ -1,4 +1,4 @@
-import type { IExecuteFunctions, INodeExecutionData, JsonObject } from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData, INodeProperties, JsonObject } from 'n8n-workflow';
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
 import { CloudBeaverClient } from '../../transport/CloudBeaverClient';
@@ -6,6 +6,80 @@ import type { RequestFn } from '../../helpers/interfaces';
 import { QueryError, TimeoutError } from '../../errors';
 import { transformResults } from '../../helpers/utils';
 import { ExecuteSqlUseCase } from './ExecuteSqlUseCase';
+
+export const description: INodeProperties[] = [
+	{
+		displayName: 'SQL Query',
+		name: 'query',
+		type: 'string',
+		typeOptions: { editor: 'sqlEditor' },
+		default: '',
+		required: true,
+		description: 'SQL query to execute',
+		displayOptions: { show: { operation: ['executeQuery'] } },
+	},
+	{
+		displayName: 'Limit',
+		name: 'limit',
+		type: 'number',
+		typeOptions: { minValue: 1 },
+		default: 50,
+		description: 'Max number of results to return',
+		displayOptions: { show: { operation: ['executeQuery'] } },
+	},
+	{
+		displayName: 'Offset',
+		name: 'offset',
+		type: 'number',
+		typeOptions: { minValue: 0 },
+		default: 0,
+		description: 'Number of results to skip before returning rows',
+		displayOptions: { show: { operation: ['executeQuery'] } },
+	},
+	{
+		displayName: 'Order By',
+		name: 'orderBy',
+		type: 'string',
+		default: '',
+		placeholder: 'e.g. name ASC, created_at DESC',
+		description: 'Column(s) to sort results by, applied on top of the SQL query',
+		displayOptions: { show: { operation: ['executeQuery'] } },
+	},
+	{
+		displayName: 'Where',
+		name: 'where',
+		type: 'string',
+		default: '',
+		placeholder: "e.g. age > 18 AND status = 'active'",
+		description: 'Additional WHERE condition applied on top of the SQL query',
+		displayOptions: { show: { operation: ['executeQuery'] } },
+	},
+	{
+		displayName: 'Options',
+		name: 'options',
+		type: 'collection',
+		placeholder: 'Add option',
+		default: {},
+		displayOptions: { show: { operation: ['executeQuery'] } },
+		options: [
+			{
+				displayName: 'Query Timeout',
+				name: 'queryTimeout',
+				type: 'number',
+				default: 60,
+				typeOptions: { minValue: 1 },
+				description: 'Max number of seconds to wait for query results',
+			},
+			{
+				displayName: 'Replace Empty Strings with NULL',
+				name: 'replaceEmptyStrings',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to replace empty strings with NULL in the query results',
+			},
+		],
+	},
+];
 
 export async function execute(
 	this: IExecuteFunctions,

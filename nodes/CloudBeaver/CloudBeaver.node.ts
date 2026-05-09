@@ -16,7 +16,7 @@ export class CloudBeaver implements INodeType {
 		icon: 'file:cloudbeaver.svg',
 		group: ['input'],
 		version: 1,
-		description: 'Execute SQL queries via CloudBeaver',
+		description: 'Interact with databases via CloudBeaver: execute SQL queries, select, insert, update, and delete rows',
 		usableAsTool: true,
 		defaults: { name: 'CloudBeaver' },
 		inputs: [NodeConnectionTypes.Main],

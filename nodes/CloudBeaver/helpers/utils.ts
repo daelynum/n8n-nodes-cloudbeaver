@@ -29,3 +29,18 @@ export function transformResults(
 
 	return items;
 }
+
+export function quoteIdentifier(name: string, dbType: string): string {
+	switch (dbType) {
+		case 'mysql':
+			return '`' + name.replace(/`/g, '``') + '`';
+		case 'mssql':
+			return '[' + name.replace(/]/g, ']]') + ']';
+		default:
+			return '"' + name.replace(/"/g, '""') + '"';
+	}
+}
+
+export function escapeValue(value: string): string {
+	return value.replace(/'/g, "''");
+}
