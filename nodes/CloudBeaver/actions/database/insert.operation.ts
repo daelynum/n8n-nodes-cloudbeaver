@@ -48,11 +48,11 @@ export const description: INodeProperties[] = [
 						description:
 							'How to format the value in the generated SQL. Use Raw SQL only with trusted input for expressions like NOW() or CAST(...).',
 						options: [
-							{ name: 'String', value: 'string' },
-							{ name: 'Number', value: 'number' },
 							{ name: 'Boolean', value: 'boolean' },
 							{ name: 'Null', value: 'null' },
+							{ name: 'Number', value: 'number' },
 							{ name: 'Raw SQL', value: 'raw' },
+							{ name: 'String', value: 'string' },
 						],
 					},
 				],
