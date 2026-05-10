@@ -94,8 +94,20 @@ ORDER BY created_at DESC LIMIT 50
 
 ### Insert / Update value types
 
-Insert and Update operations treat all values as strings. For numeric or boolean columns most databases cast
-automatically (e.g. `'42'` -> `42`). For complex expressions or specific types use **Execute SQL Query** instead.
+Insert and Update operations let you choose how each value is formatted in the generated SQL query.
+
+| Value type | SQL output example |
+|------------|--------------------|
+| String     | `'Alice'`          |
+| Number     | `42`               |
+| Boolean    | `TRUE`             |
+| Null       | `NULL`             |
+| Raw SQL    | `NOW()`            |
+
+Use **Raw SQL** for database-specific expressions, casts, functions, or complex values, such as `NOW()`,
+`CAST('42' AS INTEGER)`, or `'{"a":1}'::jsonb`.
+
+> **Warning**: Use Raw SQL only with trusted values. Raw SQL is inserted into the query without escaping.
 
 ## Getting Started (Local Testing)
 

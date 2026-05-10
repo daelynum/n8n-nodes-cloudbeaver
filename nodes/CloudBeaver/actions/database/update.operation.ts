@@ -7,7 +7,7 @@ import type {
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 
 import type { RequestFn } from '../../helpers/interfaces';
-import { quoteIdentifier, escapeValue } from '../../helpers/utils';
+import { quoteIdentifier, formatSqlValue, validateColumns, type ValueType } from '../../helpers/utils';
 import { CloudBeaverClient } from '../../transport/CloudBeaverClient';
 import { ExecuteSqlUseCase } from './ExecuteSqlUseCase';
 
@@ -40,6 +40,21 @@ export const description: INodeProperties[] = [
 						default: '',
 						placeholder: 'e.g. Alice',
 					},
+					{
+						displayName: 'Value Type',
+						name: 'valueType',
+						type: 'options',
+						default: 'string',
+						description:
+							'How to format the value in the generated SQL. Use Raw SQL only with trusted input for expressions like NOW() or CAST(...).',
+						options: [
+							{ name: 'String', value: 'string' },
+							{ name: 'Number', value: 'number' },
+							{ name: 'Boolean', value: 'boolean' },
+							{ name: 'Null', value: 'null' },
+							{ name: 'Raw SQL', value: 'raw' },
+						],
+					},
 				],
 			},
 		],
@@ -49,12 +64,12 @@ export const description: INodeProperties[] = [
 		name: 'updateWhere',
 		type: 'string',
 		default: '',
-		placeholder: 'e.g. ID = \'42\'',
+		placeholder: "e.g. ID = '42'",
 		description: 'Condition to identify which rows to update. Leave empty to update all rows.',
 		displayOptions: { show: { operation: ['update'] } },
 	},
 	{
-		displayName: 'Update Fields',
+		displayName: 'Options',
 		name: 'updateOptions',
 		type: 'collection',
 		placeholder: 'Add option',
@@ -92,7 +107,8 @@ export async function execute(
 		const table = (this.getNodeParameter('table', i) as string).trim();
 		const columnsData = this.getNodeParameter('columns.values', i, []) as Array<{
 			column: string;
-			value: string;
+			value: unknown;
+			valueType?: ValueType;
 		}>;
 		const whereClause = (this.getNodeParameter('updateWhere', i) as string).trim();
 		const defaultDatabase =
@@ -103,19 +119,24 @@ export async function execute(
 		if (!table) {
 			throw new NodeOperationError(this.getNode(), 'Table name is required', { itemIndex: i });
 		}
-		if (!columnsData.length) {
-			throw new NodeOperationError(this.getNode(), 'At least one column is required', {
-				itemIndex: i,
-			});
-		}
+		validateColumns(this, columnsData, i);
 
 		const schemaTable = schema
 			? `${quoteIdentifier(schema, dbType)}.${quoteIdentifier(table, dbType)}`
 			: quoteIdentifier(table, dbType);
 
-		const setClauses = columnsData
-			.map((c) => `${quoteIdentifier(c.column, dbType)} = '${escapeValue(c.value)}'`)
-			.join(', ');
+		let setClauses: string;
+		try {
+			setClauses = columnsData
+				.map((c) => {
+					const column = quoteIdentifier(c.column.trim(), dbType);
+					const value = formatSqlValue(c.value, c.valueType ?? 'string', dbType);
+					return `${column} = ${value}`;
+				})
+				.join(', ');
+		} catch (error) {
+			throw new NodeOperationError(this.getNode(), (error as Error).message, { itemIndex: i });
+		}
 
 		let sql = `UPDATE ${schemaTable} SET ${setClauses}`;
 		if (whereClause) sql += ` WHERE ${whereClause}`;
