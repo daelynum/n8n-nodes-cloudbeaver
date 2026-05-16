@@ -76,14 +76,6 @@ mutation initConnection($id: ID!, $projectId: ID!) {
 }`,
 };
 
-export const CLOSE_SESSION: GqlQuery = {
-	operationName: 'closeSession',
-	query: `
-mutation closeSession {
-  closeSession
-}`,
-};
-
 export const ASYNC_TASK_INFO: GqlQuery = {
 	operationName: 'asyncTaskInfo',
 	query: `

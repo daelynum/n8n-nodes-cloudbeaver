@@ -6,7 +6,7 @@ import {
 	SQL_CONTEXT_CREATE,
 	SQL_CONTEXT_DESTROY,
 } from '../queries';
-import { ContextError, QueryError, TimeoutError } from '../errors';
+import { ContextError, QueryError, SessionExpiredError, TimeoutError } from '../errors';
 import type {
 	AsyncTaskResult,
 	GqlResponse,
@@ -21,7 +21,8 @@ function unwrap<T>(
 	fallback: string,
 ): T {
 	if (response.errors?.length) {
-		throw errorFactory(response.errors[0].message ?? fallback);
+		const msg = response.errors.map((e) => e.message ?? '').join('; ');
+		throw errorFactory(msg || fallback);
 	}
 	if (response.data === undefined) {
 		throw errorFactory(fallback);
@@ -37,7 +38,17 @@ export class CloudBeaverClient {
 			...INIT_CONNECTION,
 			variables: { id: connectionId, projectId },
 		});
-		unwrap(response, (msg) => new QueryError(msg), 'Failed to initialize connection');
+		if (response.data?.initConnection?.id) return;
+
+		const errors = response.errors ?? [];
+		const errorMsg = errors.map((e) => e.message ?? '').join('; ');
+
+		if (errorMsg.toLowerCase().includes('already connected')) return;
+
+		// Any other failure - treat as a stale-session signal so withSession retries once.
+		throw new SessionExpiredError(
+			errorMsg || 'Failed to initialize connection: unexpected empty response',
+		);
 	}
 
 	async createContext(params: {
@@ -48,7 +59,7 @@ export class CloudBeaverClient {
 		const { connectionId, projectId, defaultDatabase } = params;
 		const response = await this.request<{ sqlContextCreate?: IdResponse }>({
 			...SQL_CONTEXT_CREATE,
-			variables: { connectionId, projectId, defaultCatalog: defaultDatabase || undefined },
+			variables: { connectionId, projectId, defaultCatalog: defaultDatabase ?? undefined },
 		});
 		const data = unwrap(response, (msg) => new ContextError(msg), 'Failed to create SQL context');
 		const contextId = data.sqlContextCreate?.id;
@@ -100,6 +111,9 @@ export class CloudBeaverClient {
 
 			if (task && !task.running) return;
 
+			const remaining = deadline - Date.now();
+			if (remaining <= 0) break;
+			await new Promise((resolve) => setTimeout(resolve, Math.min(intervalMs, remaining)));
 			intervalMs = Math.min(intervalMs * 2, maxIntervalMs);
 		}
 

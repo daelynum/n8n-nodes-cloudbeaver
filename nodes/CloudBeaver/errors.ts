@@ -4,3 +4,4 @@ export class CloudBeaverError extends OperationalError {}
 export class QueryError extends CloudBeaverError {}
 export class ContextError extends CloudBeaverError {}
 export class TimeoutError extends CloudBeaverError {}
+export class SessionExpiredError extends CloudBeaverError {}

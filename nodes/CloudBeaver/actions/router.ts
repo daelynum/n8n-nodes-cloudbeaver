@@ -23,7 +23,11 @@ export async function router(this: IExecuteFunctions): Promise<INodeExecutionDat
 	const serverUrl = String(credentials.serverUrl).replace(/\/$/, '');
 	const authProvider = createAuthProvider(credentials);
 
-	await withSession(this, serverUrl, authProvider, async (sessionCookie) => {
+	const authIdentity =
+		credentials.authType === 'local' ? String(credentials.user) : String(credentials.token);
+	const cacheKey = `${serverUrl}::${String(credentials.authType)}::${authIdentity}`;
+
+	await withSession(this, serverUrl, authProvider, cacheKey, async (sessionCookie) => {
 		const request: RequestFn = async <T>({
 			query,
 			variables,

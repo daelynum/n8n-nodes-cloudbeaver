@@ -1,8 +1,10 @@
 import type { IExecuteFunctions } from 'n8n-workflow';
 import { NodeOperationError } from 'n8n-workflow';
 
-import { AUTH_LOGIN, CLOSE_SESSION } from '../queries';
+import { AUTH_LOGIN } from '../queries';
 import type { GqlResponse, IAuthProvider } from '../helpers/interfaces';
+import { sessionCache } from './sessionCache';
+import { SessionExpiredError } from '../errors';
 
 export async function createSession(
 	this: IExecuteFunctions,
@@ -69,21 +71,49 @@ export async function withSession<T>(
 	ctx: IExecuteFunctions,
 	serverUrl: string,
 	authProvider: IAuthProvider,
+	cacheKey: string,
 	fn: (sessionCookie: string) => Promise<T>,
 ): Promise<T> {
-	const sessionCookie = await createSession.call(ctx, serverUrl, authProvider);
+	// Stores the promise synchronously before any await - prevents cache stampede
+	// under concurrent executions.
+	const createAndCacheSession = (): Promise<string> => {
+		const promise = createSession.call(ctx, serverUrl, authProvider);
+		sessionCache.set(cacheKey, promise);
+		promise.catch(() => {
+			// Identity check: only evict if this exact promise is still cached.
+			// A newer entry may have replaced ours (e.g. after TTL or explicit refresh).
+			if (sessionCache.get(cacheKey) === promise) sessionCache.delete(cacheKey);
+		});
+		return promise;
+	};
+
+	const getOrCreateSession = (): Promise<string> => {
+		return sessionCache.get(cacheKey) ?? createAndCacheSession();
+	};
+
+	// Capture which promise we used so concurrent retries can collaborate:
+	// only the first to detect expiry evicts it; others reuse the new shared session.
+	const usedPromise = getOrCreateSession();
+	const sessionCookie = await usedPromise;
 	try {
 		return await fn(sessionCookie);
-	} finally {
-		try {
-			await cloudbeaverRequest.call(
-				ctx,
-				serverUrl,
-				{ query: CLOSE_SESSION.query, operationName: CLOSE_SESSION.operationName },
-				sessionCookie,
-			);
-		} catch {
-			// session close failure is non-critical, ignore
+	} catch (err) {
+		if (err instanceof SessionExpiredError) {
+			// Atomic test-and-evict (sync - no interleaving with other tasks).
+			if (sessionCache.get(cacheKey) === usedPromise) sessionCache.delete(cacheKey);
+			const freshCookie = await getOrCreateSession();
+			try {
+				return await fn(freshCookie);
+			} catch (retryErr) {
+				if (retryErr instanceof SessionExpiredError) {
+					throw new NodeOperationError(
+						ctx.getNode(),
+						'Failed to initialize connection. The connection may have been removed from CloudBeaver.',
+					);
+				}
+				throw retryErr;
+			}
 		}
+		throw err;
 	}
 }
